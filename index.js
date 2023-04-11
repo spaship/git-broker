@@ -8,10 +8,12 @@ const { Gitlab } = require('@gitbeaker/node');
 const app = express();
 const mock = new MockAdapter(axios);
 const fs = require('fs');
+require('dotenv').config()
 // Github API authentication
 const octokit = new Octokit({
-  auth: process.env.GITHUB_ACCESS_TOKEN 
+  auth: process.env.GITHUB_ACCESS_TOKEN
 });
+
 
 const gitlab_access_token = process.env.GITLAB_ACCESS_TOKEN
 app.use(bodyParser.json());
@@ -150,7 +152,7 @@ app.post('/webhookForGitlab', async (req, res) => {
 
     const eventType = req.header('X-Gitlab-Event');
   const eventData = req.body;
-console.log(eventData)
+
   if (eventType === 'Merge Request Hook' && eventData.object_attributes.state === 'merged') {
     const projectId = eventData.project.id;
     const mergeRequestId = eventData.object_attributes.id;
@@ -163,7 +165,8 @@ console.log(eventData)
     },
     json: {
       body: 'This is a comment on the merge request' // Replace with your comment text
-    }
+    },
+    timeout: 60000 // Timeout in milliseconds (60 seconds)
   };
   const commentBody = 'This is a test comment on the commit'; // Replace with the body of the comment you want to create
 
@@ -224,7 +227,8 @@ const option5 = {
     branch: branchName,
     ref: ref
   },
-  json: true
+  json: true,
+
 };
 
 
