@@ -3,10 +3,10 @@ const bodyParser = require('body-parser');
 const { Octokit } = require('@octokit/rest');
 const axios = require('axios');
 const request = require('request');
-const MockAdapter = require('axios-mock-adapter');
+// const MockAdapter = require('axios-mock-adapter');
 const { Gitlab } = require('@gitbeaker/node');
 const app = express();
-const mock = new MockAdapter(axios);
+// const mock = new MockAdapter(axios);
 const fs = require('fs');
 require('dotenv').config()
 // Github API authentication
@@ -14,8 +14,12 @@ const octokit = new Octokit({
   auth: process.env.GITHUB_ACCESS_TOKEN
 });
 
+const api = new Gitlab({
+  token: process.env.GITLAB_ACCESS_TOKEN,
+  url: 'https://gitlab.com/api/v4'
+});
 
-const gitlab_access_token = process.env.GITLAB_ACCESS_TOKEN
+
 app.use(bodyParser.json());
 
 
@@ -30,7 +34,7 @@ app.post('/webhook', async (req, res) => {
     const comment = {
       body: 'Thanks for opening this issue!',
     };
-// 1.comment on a specific Issue
+// 1.comment on a specific PR
 const url = 'https://smee.io/aWMY6G3acItkWaAq';
 const data = {
   title: payload.pull_request.title,
@@ -42,9 +46,9 @@ const headers = {
 
 
 // Mock the HTTP POST request
-mock.onPost('https://smee.io/aWMY6G3acItkWaAq').reply(200, {
-  message: 'Mock response from Smee.io',
-});
+// mock.onPost('https://smee.io/aWMY6G3acItkWaAq').reply(200, {
+//   message: 'Mock response from Smee.io',
+// });
 try {
   const response = await axios.post(url, data, { headers });
   console.log(response.data);
@@ -152,128 +156,126 @@ app.post('/webhookForGitlab', async (req, res) => {
 
     const eventType = req.header('X-Gitlab-Event');
   const eventData = req.body;
+  
 
-  if (eventType === 'Merge Request Hook' && eventData.object_attributes.state === 'merged') {
+  if (eventType === 'Merge Request Hook' ) {
     const projectId = eventData.project.id;
-    const mergeRequestId = eventData.object_attributes.id;
-    const commitSha = eventData.after;
-
-  const option1 = {
-    url: `https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/notes`,
+    const mergeRequestId = eventData.object_attributes.iid;  
+    const commitSha = eventData.object_attributes.last_commit.id; // replace with the SHA of the commit you want to comment on
+    const commentBody = 'This is a test comment'; // replace with the body of your comment
+// 1.comment on a specific MP
+try {
+  const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/notes`, { 'body': `test by Palak - ${Date.now()}` }, {
     headers: {
-      'PRIVATE-TOKEN': gitlab_access_token // Replace with your GitLab private token
+      'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
+      'Content-Type': 'application/json'
     },
-    json: {
-      body: 'This is a comment on the merge request' // Replace with your comment text
-    },
-    timeout: 60000 // Timeout in milliseconds (60 seconds)
-  };
-  const commentBody = 'This is a test comment on the commit'; // Replace with the body of the comment you want to create
-
-const option2 = {
-  method: 'POST',
-  url: `https://gitlab.com/api/v4/projects/${projectId}/repository/commits/${commitSha}/comments`,
-  headers: {
-    'PRIVATE-TOKEN': gitlab_access_token // Replace with your GitLab private token
-  },
-  body: {
-    note: commentBody
-  },
-  json: true
-};
-
-const filePath = 'path/to/new/file.txt'; // Replace with the path to the new file you want to create
-const fileContent = 'This is the content of the new file'; // Replace with the content of the new file
-const branch = 'main';
-const option3 = {
-  method: 'POST',
-  url: `https://gitlab.com/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}`,
-  headers: {
-    'PRIVATE-TOKEN': gitlab_access_token
-  },
-  body: {
-    branch: branch,
-    content: fileContent,
-    commit_message: 'Create new file' // Replace with your commit message
-  },
-  json: true
-};
-const filePathToAlter = 'path/to/new/file.txt'; // Replace with the path to the file you want to update
-// Read the new content for the file from a local file
-const newContent = "kfkmfm"
-const option4 = {
-  method: 'PUT',
-  url: `https://gitlab.com/api/v4/projects/${projectId}/repository/files/${filePathToAlter}`,
-  headers: {
-    'PRIVATE-TOKEN': gitlab_access_token
-  },
-  body: {
-    branch: 'main', // Replace with the name of the branch you want to update
-    content: newContent.toString('base64'), // Encode the new content as base64
-    commit_message: 'Update file' // Replace with your commit message
-  },
-  json: true
-};
-
-const branchName = 'new-branch'; // Replace with the name of the new branch you want to create
-const ref = 'main'; // Replace with the name of the branch you want to create the new branch from
-const option5 = {
-  method: 'POST',
-  url: `https://gitlab.com/api/v4/projects/${projectId}/repository/branches`,
-  headers: {
-    'PRIVATE-TOKEN': gitlab_access_token
-  },
-  body: {
-    branch: branchName,
-    ref: ref
-  },
-  json: true,
-
-};
-
-
-  // Send the API request to add the comment
-  request.post(option1, (error, response, body) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error adding comment');
-    } else {
-      console.log('Comment added successfully');
-      res.status(200).send('Comment added');
-    }
   });
-  request.post(option2, (error, response, body) => {
-    if (error) {
-      console.error(error);
-    } else {
-      console.log('Comment added successfully on commit');
-     
-    }
-  });
-  request.post(option3, (error, response, body) => {
-    if (error) {
-      console.error(error);
-    } else {
-      console.log('successfully Write/Add a new file to the repo');
-     
-    }
-  });
-  request.post(option4, (error, response, body) => {
-    if (error) {
-      console.error(error);
-    } else {
-      console.log('successfully altered the file to the repo');
-     
-    }
-  });
-  request.post(option5, (error, response, body) => {
-    if (error) {
-      console.error(error);
-    } else {
-      console.log('successfully created a new branch');
-     
-    }
-  });
+  console.log(response.data)
+  // Send the response to the server
+  res.send(response.data);
+} catch (error) {
+  // Handle the error response
+  console.log(error.response);
+  res.status(error.response.status).send(error.response.data);
+}
+
+
+
+
+// 2.comment on a specific commit
+// try {
+//   const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/repository/commits/${commitSha}/comments`, {
+//     note: commentBody
+//   }, {
+//     headers: {
+//       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
+//       'Content-Type': 'application/json'
+//     }
+//   });
+//  console.log(response.data)
+//   // Send the response data to the server
+//   res.send(response.data);
+// } catch (error) {
+//   // Handle the error response
+//   console.log(error)
+// }
+
+    
+//3. Write/Add a new file to the repo 
+// try {
+//   const filePath = 'path/to/new/file2.txt';
+//   const branchName = 'main'; // The branch name where the file will be created
+//   // Create the file content
+//   const fileContent = 'This is the content of the new file.';
+//   // Encode the content as base64
+//   const contentBase64 = Buffer.from(fileContent).toString('base64');
+//   // Make the API call to create the file
+//   const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}`, {
+//     branch: branchName,
+//     content: contentBase64,
+//     commit_message: 'Create new file'
+//   }, {
+//     headers: {
+//       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN, // Replace with your GitLab access token
+//       'Content-Type': 'application/json'
+//     }
+//   });
+//   console.log(response.data)
+//   // Send the response to the server
+//   res.send(response.data);
+// } catch (error) {
+//   // Handle the error response
+//   res.status(error.response.status).send(error.response.data);
+// }
+
+// // 4.Alter an existing file in the repo 
+
+// try {
+//   // Update the file contents
+//    const newContent = "This is the Updated Content";
+//   const filePathToAlter= 'path/to/new/file2.txt'
+//   // Make the PUT request to update the file
+//   const putResponse = await axios.put(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filePathToAlter)}`, {
+//     branch: 'main',
+//     content: newContent.toString('base64'),
+//     commit_message: 'Update file',
+//   }, {
+//     headers: {
+//       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
+//       'Content-Type': 'application/json',
+//     },
+//   });
+//   console.log(putResponse.data)
+//   // Send the response to the server
+//   res.send(putResponse.data);
+// } catch (error) {
+//   // Handle the error response
+//   console.log(error.response)
+//   res.status(error.response.status).send(error.response.data);
+// }
+
+// 5 .Create a new Branch.
+// try {
+//   const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/repository/branches`, {
+//     branch: 'demoBranch',
+//     ref: 'main' // The branch to base the new branch off of
+//   }, {
+//     headers: {
+//       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
+//       'Content-Type': 'application/json'
+//     }
+//   });
+
+//   console.log(response.data)
+//   //   // Send the response to the server
+//     res.send(response.data);
+// } catch (error) {
+//   // Handle the error response
+//     console.log(error.response)
+//   res.status(error.response.status).send(error.response.data);
+// }
+
   }
 
 });
