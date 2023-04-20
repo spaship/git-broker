@@ -2,33 +2,101 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { Octokit } = require('@octokit/rest');
 const axios = require('axios');
-const request = require('request');
 // const MockAdapter = require('axios-mock-adapter');
 const { Gitlab } = require('@gitbeaker/node');
 const app = express();
 // const mock = new MockAdapter(axios);
 const fs = require('fs');
+const { response } = require('express');
 require('dotenv').config()
 // Github API authentication
 const octokit = new Octokit({
   auth: process.env.GITHUB_ACCESS_TOKEN
 });
 
-const api = new Gitlab({
-  token: process.env.GITLAB_ACCESS_TOKEN,
-  url: 'https://gitlab.com/api/v4'
-});
 
 
 app.use(bodyParser.json());
 
 
-
+var entities = new Set(); // Use a Set to store distinct entities
+var entitiesForGitlab = new Set();
+const entityRegex =  /\["(.*?)"]/g;
 // Webhook endpoint to receive events from Github
 app.post('/webhook', async (req, res) => {
   const payload = req.body;
+  // Use a regular expression to match entities within square brackets
+const entityRegex =  /\["(.*?)"]/g;
+
   // Handle the payload as needed
-  const { action, issue } = req.body;
+  const { action, pull_request } = req.body;
+ if(action==='opened' && payload.pull_request.state ==="open"){
+  const commentBody = `Kindly specify the names of env u want to specify in the given format [dev,stage,qa]`; 
+    //1.comment on specific PR
+    await octokit.issues.createComment({
+      owner: payload.repository.owner.login,
+      repo: payload.repository.name,
+      issue_number: payload.pull_request.number,
+      body: commentBody,
+    }).then(response=>{
+      console.log("Comment on PR created Sucessfully");;
+    })
+    .catch(error=>{
+      console.log("error in commenting on PR")
+    })
+
+    const owner = payload.repository.owner.login // Replace with the owner of the repository
+    const repo = payload.repository.name; // Replace with the name of the repository
+    const pullRequestNumber = payload.pull_request.number; // Replace with the number of the pull request
+
+async function fetchComments() {
+  try {
+    // Fetch comments for the pull request
+    const response = await octokit.issues.listComments({
+      owner,
+      repo,
+      issue_number: pullRequestNumber,
+    });
+    const comments = response.data; // Array of comments
+  // Loop through each comment and apply regex pattern
+  comments.forEach(comment => {
+    const commentBody = comment.body.toLowerCase();
+    const matches = commentBody.match(entityRegex); // Find matches using regex
+    if (matches) {
+      matches.forEach(match => {
+            // Remove the square brackets and double quotes from the match
+        const envName = match.replace(/\[|"|]/g, '');
+     // Split the match by commas to get individual environment names
+    const envNamesArray = envName.split(',');
+    // Add each environment name to the Set
+    envNamesArray.forEach(env => entities.add(env.trim()));
+      });
+    }
+  });
+    // Check if the pull request is closed
+    const pullRequest = await octokit.pulls.get({
+      owner,
+      repo,
+      pull_number: pullRequestNumber,
+    });
+
+    if (pullRequest.data.state === "closed" || pullRequest.data.state ==="merged") {
+      console.log("Pull request is closed.");
+      return;
+    }
+
+    // Fetch comments again after a delay
+    setTimeout(fetchComments, 5000); // Fetch comments every 5 seconds (adjust the delay as needed)
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Start fetching comments
+fetchComments();
+
+
+ }
   if (action === 'closed' && payload.pull_request.merged) {
     // If an issue is opened, create a comment on it
     const comment = {
@@ -36,10 +104,18 @@ app.post('/webhook', async (req, res) => {
     };
 // 1.comment on a specific PR
 const url = 'https://smee.io/aWMY6G3acItkWaAq';
+const envs = Array.from(entities);
+
 const data = {
-  title: payload.pull_request.title,
-  body: payload.pull_request.body
+   "repoUrl" : payload.repository.html_url,
+   "gitRef" : payload.pull_request.head.ref,
+   "commitId" : payload.pull_request.head.sha,
+   "mergeId" : payload.pull_request.number,
+   "contextDir" : payload.pull_request.head.repo.full_name,
+   "envs":envs
 };
+console.log(data)
+
 const headers = {
   'Content-Type': 'application/json',
 };
@@ -156,31 +232,125 @@ app.post('/webhookForGitlab', async (req, res) => {
 
     const eventType = req.header('X-Gitlab-Event');
   const eventData = req.body;
-  
+  console.log(eventData)
 
-  if (eventType === 'Merge Request Hook' ) {
+  if (eventType === 'Merge Request Hook') {
     const projectId = eventData.project.id;
     const mergeRequestId = eventData.object_attributes.iid;  
     const commitSha = eventData.object_attributes.last_commit.id; // replace with the SHA of the commit you want to comment on
     const commentBody = 'This is a test comment'; // replace with the body of your comment
-// 1.comment on a specific MP
-try {
-  const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/notes`, { 'body': `test by Palak - ${Date.now()}` }, {
+   
+// Function to fetch comments for a pull request using GitLab API
+const fetchComments = async (projectId, pullRequestId) => {
+  try {
+    const response = await axios.get(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/merge_requests/${pullRequestId}/notes`, {
     headers: {
       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
       'Content-Type': 'application/json'
     },
   });
-  console.log(response.data)
   // Send the response to the server
-  res.send(response.data);
-} catch (error) {
-  // Handle the error response
-  console.log(error.response);
-  res.status(error.response.status).send(error.response.data);
-}
+
+    return response;
+  } catch (error) {
+    console.error(`Error fetching comments: ${error.message}`);
+    return [];
+  }
+};
 
 
+// Function to continuously fetch comments with intervals
+const fetchCommentsWithIntervals = async (projectId, pullRequestId) => {
+  
+  let isMerged = false;
+  let isClosed = false;
+
+ 
+
+  // Fetch comments initially
+  const response= await fetchComments(projectId, pullRequestId);
+  const comments=response.data
+    // Loop through each comment and apply regex pattern
+    if(comments){
+    comments.forEach(comment => {
+      const commentBody = comment.body.toLowerCase();
+      const matches = commentBody.match(entityRegex); // Find matches using regex
+      if (matches) {
+        matches.forEach(match => {
+              // Remove the square brackets and double quotes from the match
+          const envName = match.replace(/\[|"|]/g, '');
+       // Split the match by commas to get individual environment names
+      const envNamesArray = envName.split(',');
+      // Add each environment name to the Set
+      envNamesArray.forEach(env => entitiesForGitlab.add(env.trim()));
+        });
+      }
+    });
+    }
+
+  // Continuously fetch comments with intervals of 5 seconds
+  const interval = setInterval(async () => {
+    // Fetch comments
+    const newComments = await fetchComments(projectId, pullRequestId);
+  const newCommentsData=newComments.data
+  if(newCommentsData){
+  newCommentsData.forEach(comment => {
+      const commentBody = comment.body.toLowerCase();
+      const matches = commentBody.match(entityRegex); // Find matches using regex
+      if (matches) {
+        matches.forEach(match => {
+              // Remove the square brackets and double quotes from the match
+          const envName = match.replace(/\[|"|]/g, '');
+       // Split the match by commas to get individual environment names
+      const envNamesArray = envName.split(',');
+      // Add each environment name to the Set
+      envNamesArray.forEach(env => entitiesForGitlab.add(env.trim()));
+        });
+      }
+    });
+  }
+    // Check if the MR is merged
+    if (eventData.object_attributes && eventData.object_attributes.state === 'merged')  {
+      isMerged = true;
+      console.log('Merge request is merged.');
+    }
+
+    // Check if the MR is closed
+    if (eventData.object_attributes && eventData.object_attributes.state === 'closed') {
+      isClosed = true;
+      console.log('Merge request is closed.');
+    }
+
+    // If MR is merged or closed, stop fetching comments
+    if (isMerged || isClosed) {
+      clearInterval(interval);
+      console.log('Comments fetching stopped.');
+      console.log('All comments:', entitiesForGitlab);
+    }
+  }, 5000); // Interval of 5 seconds
+};
+
+// Call the function with the project ID and pull request ID
+fetchCommentsWithIntervals(projectId, mergeRequestId); // Replace with your actual project ID and pull request ID
+// 1.comment on a specific MP
+if (eventData.object_attributes.state === 'merged'){
+
+
+// try {
+//   const response = await axios.post(`https://gitlab.cee.redhat.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/notes`, { 'body': `test by Palak - ${Date.now()}` }, {
+//     headers: {
+//       'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN,
+//       'Content-Type': 'application/json'
+//     },
+//   });
+ 
+//   // Send the response to the server
+//   res.send(response);
+// } catch (error) {
+//   // Handle the error response
+//   console.log(error);
+//   res.send(error);
+// }
 
 
 // 2.comment on a specific commit
@@ -275,7 +445,7 @@ try {
 //     console.log(error.response)
 //   res.status(error.response.status).send(error.response.data);
 // }
-
+  }
   }
 
 });
