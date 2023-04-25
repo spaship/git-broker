@@ -1,13 +1,15 @@
-FROM node:18-alpine3.16
-RUN addgroup allusers && adduser -S -G allusers 1004760000
-RUN mkdir /.npm
+FROM node:18-alpine3.16 AS build
+
+RUN addgroup -S puzzgroup && adduser -S -G puzzgroup puzzuser
 WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
 COPY . .
-RUN npm install
-RUN chown -R 1004760000:allusers .
-RUN chown -R 1004760000:allusers ~/.npm
-RUN chown -R 1004760000:allusers /.npm
-RUN chmod -R 777 .
-EXPOSE 3000
-USER 1004760000
-CMD [ "npm", "run", "start"]
+
+RUN chown -R puzzuser:puzzgroup /app
+USER puzzuser
+
+EXPOSE 3001
+
+CMD ["node", "index.js"]

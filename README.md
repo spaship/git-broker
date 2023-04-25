@@ -10,24 +10,11 @@ npm install
 
 # Run the bot
 npm start
+
+# env
+Create a .env file in the root directory of the project.
+Define your variables in the .env file using the following format:
+GITHUB_ACCESS_TOKEN = your_github_access_token
+GITLAB_ACCESS_TOKEN = your_gitlab_access_token
+
 ```
-
-## Docker
-
-```sh
-# 1. Build container
-docker build -t my-first-probot-app .
-
-# 2. Start container
-docker run -e APP_ID=<app-id> -e PRIVATE_KEY=<pem-value> my-first-probot-app
-```
-
-## Contributing
-
-If you have suggestions for how my-first-probot-app could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
-
-For more, check out the [Contributing Guide](CONTRIBUTING.md).
-
-## License
-
-[ISC](LICENSE) © 2023 kotwani2883
