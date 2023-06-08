@@ -1,0 +1,8 @@
+.prettierignore
+.github
+.prettierrc
+.env.example
+Dockerfile
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+README.md
