@@ -10,6 +10,6 @@ COPY . .
 RUN chown -R puzzuser:puzzgroup /app
 USER puzzuser
 
-EXPOSE 3001
+EXPOSE 9191
 
-CMD ["node", "index.js"]
+CMD ["npm", "run", "start"]
