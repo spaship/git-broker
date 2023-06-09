@@ -1,4 +1,4 @@
-name: sidecar image build and push into container repo
+name: SPAship puzzle build and push into container repository
 
 on:
   push:
@@ -10,7 +10,12 @@ on:
       - 'dev'
       - 'fix/**'
       - 'feat/**'
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        default: v1.0.0
+        description: Bump Version
+        required: true
 
 jobs:
   push_to_registry:
