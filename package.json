@@ -31,7 +31,8 @@
     "gitlab": "^14.2.2",
     "lodash": "^4.17.15",
     "octokit": "^2.0.14",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "eslint-config-prettier": "^8.8.0",
