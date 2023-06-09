@@ -12,9 +12,9 @@ const commentOnPullRequest = async (payload, pullRequestNumber, commentBody) => 
       issue_number: pullRequestNumber,
       body: commentBody
     })
-    .then((response) => {
+    .then(() => {
+      log.info(getRepoDetails(payload));
       log.info(`Commented on Pull Request ${pullRequestNumber} Successfully`);
-      log.info(response.data);
     })
     .catch((error) => {
       log.error('Error in commentOnPullRequest');
@@ -32,7 +32,6 @@ const fetchComments = async (payload) => {
     const comments = response.data;
     comments.forEach((comment) => {
       const commentBody = comment.body.toLowerCase();
-      log.info(commentBody);
       if (commentBody.includes(deployment.SPECIFIER)) {
         const matches = commentBody.match(deployment.ENVS_REGEX);
         matches.forEach((env) => {
@@ -40,7 +39,8 @@ const fetchComments = async (payload) => {
         });
       }
     });
-    log.info(`To be Deployed in ${[...deploymentEnvs]}`);
+    if (deploymentEnvs.size) log.info(`To be Deployed in ${[...deploymentEnvs]}`);
+    else log.info('No environment found for deployment');
     return deploymentEnvs;
   } catch (error) {
     log.error('Error in fetchComments');
@@ -48,17 +48,17 @@ const fetchComments = async (payload) => {
   }
 };
 
-const commentOnCommit = async (payload, commentBody) => {
+const commentOnMergedCommit = async (payload) => {
   await octokit.rest.repos
     .createCommitComment({
       owner: payload.repository.owner.login,
       repo: payload.repository.name,
       commit_sha: payload.pull_request.merge_commit_sha,
-      body: commentBody
+      body: 'Application deployed by SPAship'
     })
-    .then((response) => {
-      log.info(`Comment created successfully : ${commitSha}`);
-      log.info(response.data);
+    .then(() => {
+      log.info(getRepoDetails(payload));
+      log.info(`Comment added successfully on merged commit : ${payload.pull_request.merge_commit_sha}`);
     })
     .catch((error) => {
       log.error('Error in commentOnCommit');
@@ -66,19 +66,19 @@ const commentOnCommit = async (payload, commentBody) => {
     });
 };
 
-const createFileOnGithubRepository = async (payload, commentBody) => {
+const createFileOnGithubRepository = async (payload, commentBody, filePath, newRef) => {
   await octokit.rest.repos
     .createOrUpdateFileContents({
       owner: payload.repository.owner.login,
       repo: payload.repository.name,
-      path: 'path/to/file5.txt',
-      message: 'Add comment',
+      path: filePath,
+      message: 'feat(spaship) : spaship.yaml added',
       content: Buffer.from(commentBody).toString('base64'),
-      branch: payload.repository.default_branch
+      branch: newRef
     })
-    .then((response) => {
+    .then(() => {
+      log.info(getRepoDetails(payload));
       log.info('File created successfully');
-      log.info(response.data);
     })
     .catch((error) => {
       log.error('Error in createFileOnGithubRepository');
@@ -86,20 +86,21 @@ const createFileOnGithubRepository = async (payload, commentBody) => {
     });
 };
 
-const alterFileOnGithubRepository = async (payload, currentContent) => {
-  const newContent = 'This is the new content of the file.';
+const alterFileOnGithubRepository = async (payload, currentContent, newRef) => {
+  const content = '### Deployment by SPAship Puzzle 1.0.0.';
   await octokit.repos
     .createOrUpdateFileContents({
       owner: payload.repository.owner.login,
       repo: payload.repository.name,
-      path: 'path/to/file5.txt',
-      message: 'Update file',
-      content: Buffer.from(newContent).toString('base64'),
-      sha: currentContent.data.sha
+      path: currentContent.data.path,
+      message: 'chore(spaship) : spaship.yaml updated',
+      content: Buffer.from(content).toString('base64'),
+      sha: currentContent.data.sha,
+      branch: newRef
     })
     .then((response) => {
-      log.info(`File updated. New commit: ${response.data.commit.sha}`);
-      log.info(response.data);
+      log.info(getRepoDetails(payload));
+      log.info(`File updated. New commit sha: ${response.data.commit.sha}`);
     })
     .catch((error) => {
       log.error('Error in alterFileOnGithubRepository');
@@ -107,32 +108,60 @@ const alterFileOnGithubRepository = async (payload, currentContent) => {
     });
 };
 
-const createNewBranchOnGithubRepository = async (payload) => {
-  const branchName = 'new-branchForDemoToday';
-  const { data: masterBranch } = await octokit.request(
-    `GET /repos/${payload.repository.owner.login}/${payload.repository.name}/git/ref/heads/master`
-  );
-  const masterSha = masterBranch.object.sha;
+const createNewBranchOnGithubRepository = async (payload, newRef) => {
+  let gitResponse;
+  try {
+    gitResponse = await octokit.request(
+      `GET /repos/${payload.repository.owner.login}/${payload.repository.name}/git/ref/heads/${payload.pull_request.base.ref}`
+    );
+  } catch (error) {
+    log.error(error);
+    return;
+  }
   await octokit
     .request(`POST /repos/${payload.repository.owner.login}/${payload.repository.name}/git/refs`, {
-      ref: `refs/heads/${branchName}`,
-      sha: masterSha
+      ref: `refs/heads/${newRef}`,
+      sha: gitResponse.data.object.sha
     })
-    .then((response) => {
-      log.info(`Successfully created new branch : ${branchName}`);
-      log.info(response.data);
+    .then(() => {
+      log.info(getRepoDetails(payload));
+      log.info(`Successfully created new branch : ${newRef}`);
     })
     .catch((error) => {
-      log.info('Error in createNewBranchOnGithubRepository');
+      log.error('Error in createNewBranchOnGithubRepository');
       log.error(error);
     });
 };
 
+const updatedRepositoryDetails = async (payload, filePath, newRef) => {
+  return await octokit.repos
+    .getContent({
+      owner: payload.repository.owner.login,
+      repo: payload.repository.name,
+      path: filePath,
+      ref: newRef
+    })
+    .catch((error) => {
+      log.error(error);
+    });
+};
+
+const getRepoDetails = (payload) => {
+  return {
+    repository: payload.repository.name,
+    pullRequestNumber: payload?.pull_request?.number,
+    headRef: payload.pull_request.head.ref,
+    baseRef: payload.pull_request.base.ref,
+    owner: payload.repository.owner.login
+  };
+};
+
 module.exports = {
   commentOnPullRequest,
-  commentOnCommit,
+  commentOnMergedCommit,
   createFileOnGithubRepository,
   createNewBranchOnGithubRepository,
   alterFileOnGithubRepository,
+  updatedRepositoryDetails,
   fetchComments
 };
