@@ -1,8 +1,7 @@
 const { log } = require('@spaship/common/lib/logging/pino');
 const { Octokit } = require('@octokit/rest');
-const { config, github } = require('../../config');
+const { config, deployment } = require('../../config');
 
-const entityRegex = /\["(.*?)"]/g;
 const octokit = new Octokit({ auth: config.githubAccessToken });
 
 const commentOnPullRequest = async (payload, pullRequestNumber, commentBody) => {
@@ -24,32 +23,25 @@ const commentOnPullRequest = async (payload, pullRequestNumber, commentBody) => 
 };
 
 const fetchComments = async (payload) => {
-  const entitiesForGitHub = new Set();
+  const deploymentEnvs = new Set();
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const pullRequestNumber = payload?.pull_request?.number || payload?.issue?.number;
   try {
-    log.info(`Fetching Comments for ${pullRequestNumber}`);
-    const response = await octokit.issues.listComments({ owner, repo, issue_number: pullRequestNumber });
+    const response = await octokit.issues.listComments({ owner, repo, issue_number: pullRequestNumber, per_page: 1000 });
     const comments = response.data;
     comments.forEach((comment) => {
       const commentBody = comment.body.toLowerCase();
       log.info(commentBody);
-      const matches = commentBody.match(entityRegex);
-      if (matches) {
-        matches.forEach((match) => {
-          const envName = match.replace(/\[|"|]/g, '');
-          const envNamesArray = envName.split(',');
-          envNamesArray.forEach((env) => entitiesForGitHub.add(env.trim()));
+      if (commentBody.includes(deployment.SPECIFIER)) {
+        const matches = commentBody.match(deployment.ENVS_REGEX);
+        matches.forEach((env) => {
+          deploymentEnvs.add(env);
         });
       }
     });
-    log.info(entitiesForGitHub);
-    const pullRequest = await octokit.pulls.get({ owner, repo, pull_number: pullRequestNumber });
-    if (pullRequest.data.state === github.PR_CLOSED || pullRequest.data.state === github.PR_MERGED) {
-      log.info('Pull request is closed.');
-      return;
-    }
+    log.info(`To be Deployed in ${[...deploymentEnvs]}`);
+    return deploymentEnvs;
   } catch (error) {
     log.error('Error in fetchComments');
     log.error(error);

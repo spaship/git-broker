@@ -16,3 +16,8 @@ module.exports.github = {
   STATE_OPEN: 'open',
   COMMENT_CREATED: 'created'
 };
+
+module.exports.deployment = {
+  SPECIFIER: process.env.DEPLOYMENT_SPECIFIER || 'spaship',
+  ENVS_REGEX: new RegExp(/(dev|qa|stage|uat)/g)
+};

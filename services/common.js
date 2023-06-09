@@ -14,6 +14,18 @@ const orchestratorRequest = async (data) => {
     });
 };
 
+const createOrchestratorPayload = (payload, contextDir, envs) => {
+  return {
+    repoUrl: payload.repository.html_url,
+    gitRef: payload.pull_request.head.ref,
+    commitId: payload.pull_request.head.sha,
+    mergeId: payload.pull_request.number.toString(),
+    contextDir: contextDir,
+    envs: envs
+  };
+};
+
 module.exports = {
-  orchestratorRequest
+  orchestratorRequest,
+  createOrchestratorPayload
 };

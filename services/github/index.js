@@ -1,6 +1,5 @@
 const { log } = require('@spaship/common/lib/logging/pino');
-const { config } = require('../../config');
-const { orchestratorRequest } = require('../common');
+const { orchestratorRequest, createOrchestratorPayload } = require('../common');
 const {
   commentOnPullRequest,
   fetchComments,
@@ -13,14 +12,16 @@ const githubPullRequestOnOpen = async (action, payload) => {
   const commentBody = `Kindly specify the names of env u want to specify in the given format [dev,stage,qa]`;
   const pullRequestNumber = payload?.pull_request?.number || payload?.issue?.number;
   // @internal comment on a specific PR
-  //await commentOnPullRequest(payload, pullRequestNumber, commentBody);
-  // @internal fetch comments from the PR
-  fetchComments(payload);
+  await commentOnPullRequest(payload, pullRequestNumber, commentBody);
+};
+
+const githubFetchComments = async (payload) => {
+  await fetchComments(payload);
 };
 
 const githubPullRequestOnCloseAndMerge = async (action, payload) => {
   // @internal comment on a specific PR
-  const envs = Array.from(entitiesForGitHub);
+  const envs = Array.from(await fetchComments(payload));
   const pullRequestNumber = payload?.pull_request?.number || payload?.issue?.number;
   let repoFullName = payload.pull_request.head.repo.full_name;
   let repoName = payload.repository.name;
@@ -35,17 +36,9 @@ const githubPullRequestOnCloseAndMerge = async (action, payload) => {
     // @internal directory path is not present, set to root directory
     contextDir = '/';
   }
-  const data = {
-    repoUrl: payload.repository.html_url,
-    gitRef: payload.pull_request.head.ref,
-    commitId: payload.pull_request.head.sha,
-    mergeId: payload.pull_request.number.toString(),
-    contextDir: contextDir,
-    envs: envs
-  };
-
   try {
-    await orchestratorRequest(data);
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs);
+    await orchestratorRequest(orchestratorPayload);
     const commentBody = `The third-party API responded with: ${JSON.stringify(response.data)}`;
     // @internal comment on specific PR
     await commentOnPullRequest(payload, pullRequestNumber, commentBody);
@@ -68,6 +61,7 @@ const githubPullRequestOnCloseAndMerge = async (action, payload) => {
 };
 
 module.exports = {
+  githubFetchComments,
   githubPullRequestOnOpen,
   githubPullRequestOnCloseAndMerge
 };
