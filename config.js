@@ -17,6 +17,14 @@ module.exports.github = {
   COMMENT_CREATED: 'created'
 };
 
+module.exports.gitlab = {
+  BASE_URL: process.env.GITLAB_BASE_URL,
+  MERGE_REQUEST: 'Merge Request Hook',
+  STATE_OPENED: 'opened',
+  STATE_MERGED: 'merged',
+  STATE_CLOSED: 'closed'
+};
+
 module.exports.deployment = {
   SPECIFIER: process.env.DEPLOYMENT_SPECIFIER || 'spaship',
   ENVS_REGEX: new RegExp(/(dev|qa|stage|uat)/g)
