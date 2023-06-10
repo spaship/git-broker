@@ -5,12 +5,6 @@ const liveness = (req, res) => {
 };
 
 const readiness = (req, res) => {
-  const mongoStatusMap = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting'
-  };
   res.json({
     server: 'Up'
   });
