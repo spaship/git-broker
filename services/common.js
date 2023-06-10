@@ -4,22 +4,22 @@ const axios = require('axios');
 const orchestratorRequest = async (data) => {
   log.info(data);
   const headers = { 'Content-Type': 'application/json' };
-  await axios
-    .post(config.orchestratorBaseUrl, data, { headers })
-    .then((response) => {
-      log.info('OrchestratorResponse', response.data);
-    })
-    .catch((error) => {
-      log.info('Error in sending data to Orchestrator', error);
-    });
+  try {
+    const response = await axios.post(config.orchestratorBaseUrl, data, { headers });
+    log.info(response.data);
+    return response.data;
+  } catch (error) {
+    log.error('Error in sending data to Orchestrator');
+    log.error(error);
+  }
 };
 
 const createOrchestratorPayload = (payload, contextDir, envs) => {
   return {
-    repoUrl: payload.repository.html_url,
-    gitRef: payload.pull_request.head.ref,
-    commitId: payload.pull_request.head.sha,
-    mergeId: payload.pull_request.number.toString(),
+    repoUrl: payload.repository.html_url || payload.project.web_url,
+    gitRef: payload.pull_request.head.ref || payload.object_attributes.source_branch,
+    commitId: payload.pull_request.head.sha || payload.object_attributes.last_commit.id,
+    mergeId: payload.pull_request.number.toString() || payload.object_attributes.id.toString(),
     contextDir: contextDir,
     envs: envs
   };
