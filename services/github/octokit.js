@@ -4,7 +4,7 @@ const { config, deployment } = require('../../config');
 
 const octokit = new Octokit({ auth: config.githubAccessToken });
 
-const commentOnPullRequest = async (payload, pullRequestNumber, commentBody) => {
+const commentOnGithubPullRequest = async (payload, pullRequestNumber, commentBody) => {
   await octokit.issues
     .createComment({
       owner: payload.repository.owner.login,
@@ -17,7 +17,7 @@ const commentOnPullRequest = async (payload, pullRequestNumber, commentBody) => 
       log.info(`Commented on Pull Request ${pullRequestNumber} Successfully`);
     })
     .catch((error) => {
-      log.error('Error in commentOnPullRequest');
+      log.error('Error in commentOnGithubPullRequest');
       log.error(error);
     });
 };
@@ -48,7 +48,7 @@ const fetchComments = async (payload) => {
   }
 };
 
-const commentOnMergedCommit = async (payload) => {
+const commentOnGithubMergedCommit = async (payload) => {
   await octokit.rest.repos
     .createCommitComment({
       owner: payload.repository.owner.login,
@@ -133,7 +133,7 @@ const createNewBranchOnGithubRepository = async (payload, newRef) => {
     });
 };
 
-const updatedRepositoryDetails = async (payload, filePath, newRef) => {
+const updatedGithubRepositoryDetails = async (payload, filePath, newRef) => {
   return await octokit.repos
     .getContent({
       owner: payload.repository.owner.login,
@@ -157,11 +157,11 @@ const getRepoDetails = (payload) => {
 };
 
 module.exports = {
-  commentOnPullRequest,
-  commentOnMergedCommit,
+  commentOnGithubPullRequest,
+  commentOnGithubMergedCommit,
   createFileOnGithubRepository,
   createNewBranchOnGithubRepository,
   alterFileOnGithubRepository,
-  updatedRepositoryDetails,
+  updatedGithubRepositoryDetails,
   fetchComments
 };
