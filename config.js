@@ -1,6 +1,6 @@
 module.exports.config = {
   env: process.env.NODE_ENV || 'dev',
-  port: process.env.ORCHESTRATOR_SECRET || 9191,
+  port: process.env.PORT || 9191,
   githubAccessToken: process.env.GITHUB_ACCESS_TOKEN,
   gitlabAccessToken: process.env.GITLAB_ACCESS_TOKEN,
   githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET,

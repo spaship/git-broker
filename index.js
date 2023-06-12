@@ -1,7 +1,6 @@
 const { log } = require('@spaship/common/lib/logging/pino');
-const { loadFiles } = require('@spaship/common/lib/logging/pino-config');
 const app = require('./app');
-const config = require('./config');
+const { config } = require('./config');
 const pkgJSON = require('./package.json');
 
 console.info(`
