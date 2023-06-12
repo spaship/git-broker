@@ -1,5 +1,6 @@
 const { log } = require('@spaship/common/lib/logging/pino');
 const axios = require('axios');
+const { config } = require('../config');
 
 const orchestratorRequest = async (data) => {
   log.info(data);
@@ -7,7 +8,7 @@ const orchestratorRequest = async (data) => {
   try {
     const response = await axios.post(config.orchestratorBaseUrl, data, { headers });
     log.info(response.data);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     log.error('Error in sending data to Orchestrator');
     log.error(error);
