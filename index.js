@@ -20,6 +20,6 @@ if (config.env === 'production') {
 
 (async () => {
   app.listen(config.port, () => {
-    log.info(`Server started for ${config.env} on port ${config.port}`);
+    log.info(`Server started for SPAship puzzle on port ${config.port}`);
   });
 })();
