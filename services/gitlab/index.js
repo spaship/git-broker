@@ -26,16 +26,24 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   const contextDir = payload.object_attributes.source.change_path || '/';
   try {
     const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs);
-    await orchestratorRequest(orchestratorPayload);
-    // @internal comment on specific Merge Request
-    await commentOnGitlabMergeRequest(
-      payload,
-      projectId,
-      mergeRequestId,
-      `Deployment started for ${[...envs]}. Please check SPAship Manager for more details.`
-    );
-    // @internal git operations [TBD use-cases]
-    // await gitlabOperations(payload);
+    const response = await orchestratorRequest(orchestratorPayload);
+    if (response) {
+      // @internal comment on specific Merge Request
+      await commentOnGitlabMergeRequest(
+        payload,
+        projectId,
+        mergeRequestId,
+        response.message
+      );
+      // @internal git operations [TBD use-cases]
+      // await gitlabOperations(payload);
+    } else {
+      await commentOnGithubPullRequest(
+        payload,
+        pullRequestNumber,
+        `Some issue occurred for the deployment. Please contact to SPAship team.`
+      );
+    }
   } catch (error) {
     log.error('Error in createFileOnGitlabRepository');
     log.error(error);
