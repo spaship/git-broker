@@ -47,21 +47,12 @@ const githubPullRequestOnCloseAndMerge = async (payload) => {
     const response = await orchestratorRequest(orchestratorPayload);
     if (response) {
       // @internal comment on specific PR
-      await commentOnGithubPullRequest(
-        payload,
-        pullRequestNumber,
-        response.message
-      );
+      await commentOnGithubPullRequest(payload, pullRequestNumber, response.message);
       // @internal git operations [TBD use-cases]
       //await gitOperations(payload);
     } else {
-      await commentOnGithubPullRequest(
-        payload,
-        pullRequestNumber,
-        `Some issue occurred for the deployment. Please contact to SPAship team.`
-      );
+      await commentOnGithubPullRequest(payload, pullRequestNumber, `Some issue occurred for the deployment. Please contact to SPAship team.`);
     }
-
   } catch (error) {
     log.error(error);
   }

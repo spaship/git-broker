@@ -29,20 +29,11 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
     const response = await orchestratorRequest(orchestratorPayload);
     if (response) {
       // @internal comment on specific Merge Request
-      await commentOnGitlabMergeRequest(
-        payload,
-        projectId,
-        mergeRequestId,
-        response.message
-      );
+      await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, response.message);
       // @internal git operations [TBD use-cases]
       // await gitlabOperations(payload);
     } else {
-      await commentOnGithubPullRequest(
-        payload,
-        pullRequestNumber,
-        `Some issue occurred for the deployment. Please contact to SPAship team.`
-      );
+      await commentOnGithubPullRequest(payload, pullRequestNumber, `Some issue occurred for the deployment. Please contact to SPAship team.`);
     }
   } catch (error) {
     log.error('Error in createFileOnGitlabRepository');
