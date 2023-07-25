@@ -9,4 +9,5 @@ module.exports.post = async (req, res) => {
   //else if (payload.action === github.COMMENT_CREATED) await githubFetchComments(payload);
   else if (payload.action === github.PR_CLOSED) await githubPullRequestOnCloseAndMerge(payload);
   res.sendStatus(200);
+  return;
 };
