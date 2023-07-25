@@ -4,7 +4,19 @@
   "private": true,
   "description": "SPAship Puzzle",
   "license": "ISC",
+  "owner": "Soumyadip Chowdhury",
   "homepage": "https://github.com/spaship/puzzle",
+  "contributors": [
+    {
+      "name": "Soumyadip Chowdhury",
+      "email": "soumyadip.note@gmail.com",
+      "url": "https://github.com/soumyadip007"
+    },
+    {
+      "name": "Palak Kotwani",
+      "url": "https://github.com/kotwani2883"
+    }
+  ],
   "keywords": [
     "github"
   ],
@@ -24,6 +36,7 @@
     "axios": "^1.3.5",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-pino-logger": "^5.0.0",
