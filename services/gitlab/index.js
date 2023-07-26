@@ -23,6 +23,7 @@ const gitlabMergeRequest = async (payload) => {
 const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   const mergeRequestId = payload.object_attributes.iid;
   const projectId = payload.project.id;
+  log.info(payload);
   const deploymentEnvs = await fetchCommentsFromGitlab(projectId, mergeRequestId);
   if (!deploymentEnvs.size) return;
   const envs = Array.from(deploymentEnvs);

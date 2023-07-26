@@ -1,6 +1,6 @@
 {
   "name": "SPAship Puzzle",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "SPAship Puzzle",
   "license": "ISC",
@@ -21,9 +21,9 @@
     "github"
   ],
   "scripts": {
-    "start": "node index.js",
+    "start": "export NODE_TLS_REJECT_UNAUTHORIZED=0;node index.js",
     "test": "jest",
-    "start:dev": "nodemon index.js",
+    "start:dev": "export NODE_TLS_REJECT_UNAUTHORIZED=0;nodemon index.js",
     "format": "npm run prettier:fix",
     "prettier": "npx prettier . --check",
     "prettier:fix": "npm run prettier -- --write"

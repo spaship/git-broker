@@ -7,6 +7,7 @@ const getGitlabHeaders = () => {
 };
 
 const fetchCommentsFromGitlab = async (projectId, mergeRequestId) => {
+  log.info()
   const deploymentEnvs = new Set();
   try {
     const response = await axios.get(`${gitlab.BASE_URL}/${projectId}/merge_requests/${mergeRequestId}/notes`, { headers: getGitlabHeaders() });
