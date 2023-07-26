@@ -30,6 +30,7 @@ const fetchCommentsFromGitlab = async (projectId, mergeRequestId) => {
 };
 
 const commentOnGitlabMergeRequest = async (payload, projectId, mergeRequestId, commentBody) => {
+ log.info(gitlab.BASE_URL);
   try {
     await axios.post(
       `${gitlab.BASE_URL}/${projectId}/merge_requests/${mergeRequestId}/notes`,
