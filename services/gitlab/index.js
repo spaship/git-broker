@@ -14,7 +14,7 @@ const gitlabMergeRequest = async (payload) => {
   const projectId = payload.project.id;
   const mergeRequestId = payload.object_attributes.iid;
   const commentBody = `Kindly specify the names of env you want to specify in the given format [dev,stage,qa]`;
-  await commentOnGitlabMergeRequest(projectId, mergeRequestId, commentBody);
+  await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, commentBody);
 };
 
 const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
