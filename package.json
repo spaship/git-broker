@@ -21,7 +21,7 @@
     "github"
   ],
   "scripts": {
-    "start": "node index.js",
+    "start": "export NODE_TLS_REJECT_UNAUTHORIZED=0;node index.js",
     "test": "jest",
     "start:dev": "nodemon index.js",
     "format": "npm run prettier:fix",
