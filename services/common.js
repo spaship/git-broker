@@ -4,7 +4,10 @@ const { config } = require('../config');
 
 const orchestratorRequest = async (data) => {
   log.info(data);
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${config.orchestratorSecret}`
+  };
   try {
     const response = await axios.post(config.orchestratorBaseUrl, data, { headers });
     log.info(response.data);
