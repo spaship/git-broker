@@ -1,6 +1,7 @@
 const { log } = require('@spaship/common/lib/logging/pino');
 const { v4: uuidv4 } = require('uuid');
 const { deployment } = require('../../config');
+const { orchestratorRequest, createOrchestratorPayload } = require('../common');
 const {
   commentOnGitlabMergeRequest,
   fetchCommentsFromGitlab,
@@ -27,17 +28,14 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   try {
     const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs);
     const response = await orchestratorRequest(orchestratorPayload);
-    if (response) {
-      // @internal comment on specific Merge Request
-      await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, response.message);
-      // @internal git operations [TBD use-cases]
-      // await gitlabOperations(payload);
-    } else {
-      await commentOnGithubPullRequest(payload, pullRequestNumber, `Some issue occurred for the deployment. Please contact to SPAship team.`);
-    }
+    // @internal comment on specific Merge Request
+    await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, response.message);
+    // @internal git operations [TBD use-cases]
+    // await gitlabOperations(payload);
   } catch (error) {
     log.error('Error in createFileOnGitlabRepository');
     log.error(error);
+    await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, error.message);
   }
 };
 
