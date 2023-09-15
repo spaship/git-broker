@@ -34,12 +34,12 @@ const fetchComments = async (payload) => {
       const commentBody = comment.body.toLowerCase();
       if (commentBody.includes(deployment.SPECIFIER)) {
         const matches = commentBody.match(deployment.ENVS_REGEX);
-        matches.forEach((env) => {
+        matches?.forEach((env) => {
           deploymentEnvs.add(env);
         });
       }
     });
-    if (deploymentEnvs.size) log.info(`To be Deployed in ${[...deploymentEnvs]}`);
+    if (deploymentEnvs?.size) log.info(`To be Deployed in ${[...deploymentEnvs]}`);
     else log.info('No environment found for deployment');
     return deploymentEnvs;
   } catch (error) {
