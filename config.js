@@ -6,11 +6,13 @@ module.exports.config = {
   githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
   gitlabWebhookSecret: process.env.GITLAB_WEBHOOK_SECRET,
   orchestratorBaseUrl: process.env.ORCHESTRATOR_BASE_URL,
-  orchestratorSecret: process.env.ORCHESTRATOR_SECRET
+  orchestratorSecret: process.env.ORCHESTRATOR_SECRET,
+  gitBrokerSecret: process.env.GIT_BROKER_SECRET
 };
 
 module.exports.github = {
   PR_OPENED: 'opened',
+  PR_REOPENED: 'reopened',
   PR_CLOSED: 'closed',
   PR_MERGED: 'merged',
   STATE_OPEN: 'open',
@@ -20,8 +22,11 @@ module.exports.github = {
 module.exports.gitlab = {
   BASE_URL: process.env.GITLAB_BASE_URL,
   MERGE_REQUEST: 'Merge Request Hook',
+  PUSH_REQUEST: 'Push Hook',
+  COMMENT_REQUEST: 'Note Hook',
   STATE_OPENED: 'opened',
   STATE_MERGED: 'merged',
+  STATE_PUSHED: 'push',
   STATE_CLOSED: 'closed'
 };
 
