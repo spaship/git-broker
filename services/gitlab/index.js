@@ -1,14 +1,15 @@
 const { log } = require('@spaship/common/lib/logging/pino');
 const { v4: uuidv4 } = require('uuid');
 const { deployment } = require('../../config');
-const { orchestratorRequest, createOrchestratorPayload } = require('../common');
+const { orchestratorDeploymentRequest, createOrchestratorPayload, orchestratorEnvListRequest } = require('../common');
 const {
   commentOnGitlabMergeRequest,
-  fetchCommentsFromGitlab,
-  commentOnGitlabMergedCommit,
+  fetchMergeRequestCommentsFromGitlab,
+  commentOnGitlabCommit,
   createNewBranchOnGitlabRepository,
   createFileOnGitlabRepository,
-  alterFileOnGitlabRepository
+  alterFileOnGitlabRepository,
+  fetchCommitDetails
 } = require('./api');
 
 const gitlabMergeRequest = async (payload) => {
@@ -18,16 +19,62 @@ const gitlabMergeRequest = async (payload) => {
   await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, commentBody);
 };
 
+const gitlabPushRequest = async (payload) => {
+  const projectId = payload.project.id;
+  const commitId = payload.checkout_sha;
+  const repoUrl = payload.repository.homepage;
+  let envList;
+  try {
+    envList = await orchestratorEnvListRequest(repoUrl, '/');
+  } catch (error) {
+    log.error('Error in gitlabPushRequest');
+    log.error(error);
+    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    return;
+  }
+  const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
+  const commentBody = `Kindly specify the names of env you want to specify in the given format [${envs.toString()}]`;
+  await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
+};
+
+const gitlabCommentOnCommit = async (payload) => {
+  if (!payload?.object_attributes?.description?.includes(deployment.SPECIFIER)) return;
+  const commitId = payload.commit.id;
+  const projectId = payload.project.id;
+  const commentBody = payload.object_attributes.description;
+  const commentDetails = await fetchCommitDetails(projectId, commitId);
+  const ref = commentDetails.last_pipeline.ref;
+  const deploymentEnvs = new Set();
+  const matches = commentBody.match(deployment.ENVS_REGEX);
+  matches.forEach((env) => {
+    deploymentEnvs.add(env);
+  });
+  if (!deploymentEnvs?.size) return;
+  const envs = Array.from(deploymentEnvs);
+  // @internal TODO : mono repo support to be added
+  const contextDir = '/';
+  try {
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, ref);
+    const response = await orchestratorDeploymentRequest(orchestratorPayload);
+    // @internal comment on specific Merge Request
+    await commentOnGitlabCommit(payload, projectId, commitId, response.message);
+  } catch (error) {
+    log.error('Error in gitlabCommentOnCommit');
+    log.error(error);
+    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+  }
+};
+
 const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   const mergeRequestId = payload.object_attributes.iid;
   const projectId = payload.project.id;
-  const deploymentEnvs = await fetchCommentsFromGitlab(projectId, mergeRequestId);
-  if (!deploymentEnvs.size) return;
+  const deploymentEnvs = await fetchMergeRequestCommentsFromGitlab(projectId, mergeRequestId);
+  if (!deploymentEnvs?.size) return;
   const envs = Array.from(deploymentEnvs);
   const contextDir = payload.object_attributes.source.change_path || '/';
   try {
-    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs);
-    const response = await orchestratorRequest(orchestratorPayload);
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '');
+    const response = await orchestratorDeploymentRequest(orchestratorPayload);
     // @internal comment on specific Merge Request
     await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, response.message);
     // @internal git operations [TBD use-cases]
@@ -45,9 +92,9 @@ const gitlabOperations = async (payload) => {
   const projectId = payload.project.id;
   const newRef = `${deployment.SPECIFIER}-${uuidv4().substring(0, 5)}`;
   const targetBranch = payload.object_attributes.target_branch;
-  const commitSha = payload.object_attributes.last_commit.id;
+  const commitId = payload.object_attributes.last_commit.id;
   // @internal comment on a specific commit
-  await commentOnGitlabMergedCommit(payload, projectId, commitSha, commentBody);
+  await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
   // @internal create a new branch
   await createNewBranchOnGitlabRepository(payload, projectId, newRef, targetBranch);
   // @internal create a new file in the repository
@@ -58,5 +105,7 @@ const gitlabOperations = async (payload) => {
 
 module.exports = {
   gitlabMergeRequest,
-  gitlabMergeRequestOnCloseAndMerge
+  gitlabMergeRequestOnCloseAndMerge,
+  gitlabPushRequest,
+  gitlabCommentOnCommit
 };

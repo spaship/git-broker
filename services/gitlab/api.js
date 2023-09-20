@@ -6,7 +6,7 @@ const getGitlabHeaders = () => {
   return { 'PRIVATE-TOKEN': config.gitlabAccessToken, 'Content-Type': 'application/json' };
 };
 
-const fetchCommentsFromGitlab = async (projectId, mergeRequestId) => {
+const fetchMergeRequestCommentsFromGitlab = async (projectId, mergeRequestId) => {
   const deploymentEnvs = new Set();
   try {
     const response = await axios.get(`${gitlab.BASE_URL}/${projectId}/merge_requests/${mergeRequestId}/notes`, { headers: getGitlabHeaders() });
@@ -20,10 +20,10 @@ const fetchCommentsFromGitlab = async (projectId, mergeRequestId) => {
         });
       }
     });
-    if (deploymentEnvs.size) log.info(`To be Deployed in ${[...deploymentEnvs]}`);
+    if (deploymentEnvs?.size) log.info(`To be Deployed in ${[...deploymentEnvs]}`);
     else log.info('No environment found for deployment');
   } catch (error) {
-    log.error(`Error in fetchCommentsFromGitlab`);
+    log.error(`Error in fetchMergeRequestCommentsFromGitlab`);
     log.error(error);
   }
   return deploymentEnvs;
@@ -45,17 +45,28 @@ const commentOnGitlabMergeRequest = async (payload, projectId, mergeRequestId, c
   }
 };
 
-const commentOnGitlabMergedCommit = async (payload, projectId, commitSha, commentBody) => {
+const commentOnGitlabCommit = async (payload, projectId, commitId, commentBody) => {
   try {
     await axios.post(
-      `${gitlab.BASE_URL}/${projectId}/repository/commits/${commitSha}/comments`,
+      `${gitlab.BASE_URL}/${projectId}/repository/commits/${commitId}/comments`,
       { note: commentBody },
       { headers: getGitlabHeaders() }
     );
     log.info(getRepoDetails(payload));
-    log.info(`Success in commenting on Specific commit : ${commitSha}`);
+    log.info(`Success in commenting on Specific commit : ${commitId}`);
   } catch (error) {
-    log.error('Error in commentOnGitlabMergedCommit');
+    log.error('Error in commentOnGitlabCommit');
+    log.error(error);
+    throw new Error(error);
+  }
+};
+
+const fetchCommitDetails = async (projectId, commitId) => {
+  try {
+    const response = await axios.get(`${gitlab.BASE_URL}/${projectId}/repository/commits/${commitId}`, { headers: getGitlabHeaders() });
+    return response?.data;
+  } catch (error) {
+    log.error('Error in commentOnGitlabCommit');
     log.error(error);
   }
 };
@@ -118,19 +129,20 @@ const alterFileOnGitlabRepository = async (payload, projectId, commentBody, file
 
 const getRepoDetails = (payload) => {
   return {
-    repository: payload.repository.name,
-    pullRequestNumber: payload.object_attributes.iid,
-    headRef: payload.object_attributes.target_branch,
-    baseRef: payload.object_attributes.source_branch,
-    owner: payload.user.name
+    repository: payload?.repository?.name,
+    pullRequestNumber: payload?.object_attributes?.iid,
+    headRef: payload?.object_attributes?.target_branch || payload?.ref,
+    baseRef: payload?.object_attributes?.source_branch || payload?.ref,
+    owner: payload?.user?.name || payload?.user_name
   };
 };
 
 module.exports = {
-  fetchCommentsFromGitlab,
+  fetchMergeRequestCommentsFromGitlab,
   commentOnGitlabMergeRequest,
-  commentOnGitlabMergedCommit,
+  commentOnGitlabCommit,
   createNewBranchOnGitlabRepository,
   createFileOnGitlabRepository,
-  alterFileOnGitlabRepository
+  alterFileOnGitlabRepository,
+  fetchCommitDetails
 };
