@@ -1,7 +1,7 @@
 const { log } = require('@spaship/common/lib/logging/pino');
 const { v4: uuidv4 } = require('uuid');
 const { deployment } = require('../../config');
-const { orchestratorRequest, createOrchestratorPayload } = require('../common');
+const { orchestratorDeploymentRequest, createOrchestratorPayload } = require('../common');
 const {
   commentOnGithubPullRequest,
   fetchComments,
@@ -26,7 +26,7 @@ const githubFetchComments = async (payload) => {
 const githubPullRequestOnCloseAndMerge = async (payload) => {
   // @internal fetch comments from the specific Pull Request
   const deploymentEnvs = await fetchComments(payload);
-  if (!deploymentEnvs.size) return;
+  if (!deploymentEnvs?.size) return;
   const envs = Array.from(deploymentEnvs);
   const pullRequestNumber = payload?.pull_request?.number || payload?.issue?.number;
   const repoFullName = payload.pull_request.head.repo.full_name;
@@ -43,8 +43,8 @@ const githubPullRequestOnCloseAndMerge = async (payload) => {
     contextDir = '/';
   }
   try {
-    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs);
-    const response = await orchestratorRequest(orchestratorPayload);
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '');
+    const response = await orchestratorDeploymentRequest(orchestratorPayload);
     if (response) {
       // @internal comment on specific PR
       await commentOnGithubPullRequest(payload, pullRequestNumber, response.message);
