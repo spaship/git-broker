@@ -33,7 +33,7 @@ const gitlabPushRequest = async (payload) => {
     return;
   }
   const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
-  const commentBody = `Kindly specify the names of env you want to specify in the given format [${envs.toString()}]`;
+  const commentBody = `📗 Kindly specify the names of environment you want to deploy [Registered Environment : ${envs.toString()}.].`;
   await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
 };
 
@@ -42,6 +42,14 @@ const gitlabCommentOnCommit = async (payload) => {
   const commitId = payload.commit.id;
   const projectId = payload.project.id;
   const commentBody = payload.object_attributes.description;
+  try {
+    await commentOnGitlabCommit(payload, projectId, commitId, "⌛️ We're Currently Processing the Deployment Request, Please wait for sometime.");
+  } catch (error) {
+    log.error('Error in gitlabCommentOnCommit');
+    log.error(error);
+    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    return;
+  }
   const commentDetails = await fetchCommitDetails(projectId, commitId);
   const ref = commentDetails.last_pipeline.ref;
   const deploymentEnvs = new Set();
