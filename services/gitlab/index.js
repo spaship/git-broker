@@ -33,15 +33,17 @@ const gitlabPushRequest = async (payload) => {
     return;
   }
   const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
-  const commentBody = `📗 Kindly specify the names of environment you want to deploy [Registered Environment : ${envs.toString()}.].`;
+  const commentBody = `📗 Kindly specify the names of environment you want to deploy [Registered Environment : ${envs.toString()}].`;
   await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
 };
 
 const gitlabCommentOnCommit = async (payload) => {
-  if (!payload?.object_attributes?.description?.includes(deployment.SPECIFIER)) return;
+  if (!payload?.object_attributes?.description?.startsWith(deployment.SPECIFIER)) return;
   const commitId = payload.commit.id;
   const projectId = payload.project.id;
+  const repoUrl = payload?.repository?.homepage;
   const commentBody = payload.object_attributes.description;
+  let envList;
   try {
     await commentOnGitlabCommit(payload, projectId, commitId, "⌛️ We're Currently Processing the Deployment Request, Please wait for sometime.");
   } catch (error) {
@@ -50,14 +52,40 @@ const gitlabCommentOnCommit = async (payload) => {
     await commentOnGitlabCommit(payload, projectId, commitId, error.message);
     return;
   }
+  try {
+    envList = await orchestratorEnvListRequest(repoUrl, '/');
+  } catch (error) {
+    log.error('Error in gitlabPushRequest');
+    log.error(error);
+    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    return;
+  }
+  envList = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
   const commentDetails = await fetchCommitDetails(projectId, commitId);
   const ref = commentDetails.last_pipeline.ref;
   const deploymentEnvs = new Set();
-  const matches = commentBody.match(deployment.ENVS_REGEX);
-  matches.forEach((env) => {
-    deploymentEnvs.add(env);
+  const extractedEnvs = commentBody.split(/[\s,]+/);
+  extractedEnvs.map((env) => {
+    if (envList.includes(env)) {
+      deploymentEnvs.add(env);
+    }
   });
-  if (!deploymentEnvs?.size) return;
+  if (!deploymentEnvs?.size) {
+    try {
+      await commentOnGitlabCommit(
+        payload,
+        projectId,
+        commitId,
+        `⚠️ Please provide a valid env for deployment [Registered Environments : ${envList.toString()}].`
+      );
+      return;
+    } catch (error) {
+      log.error('Error in gitlabCommentOnCommit');
+      log.error(error);
+      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+      return;
+    }
+  }
   const envs = Array.from(deploymentEnvs);
   // @internal TODO : mono repo support to be added
   const contextDir = '/';
