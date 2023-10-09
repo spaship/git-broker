@@ -35,14 +35,15 @@ const orchestratorEnvListRequest = async (repoUrl, contextDir) => {
   }
 };
 
-const createOrchestratorPayload = (payload, contextDir, envs, ref) => {
+const createOrchestratorPayload = (payload, contextDir, envs, ref, ephemeral) => {
   return {
     repoUrl: payload?.repository?.html_url || payload?.project?.web_url,
     gitRef: payload?.pull_request?.head?.ref || payload?.object_attributes?.source_branch || ref,
     commitId: payload?.pull_request?.head?.sha || payload?.object_attributes?.last_commit?.id || payload?.object_attributes?.commit_id,
-    mergeId: payload?.pull_request?.number?.toString(),
+    mergeId: payload?.pull_request?.number?.toString() || payload?.object_attributes?.iid?.toString(),
     projectId: `${payload.project.id}` || 'NA',
     contextDir: contextDir,
+    ephemeral: ephemeral,
     envs: envs
   };
 };

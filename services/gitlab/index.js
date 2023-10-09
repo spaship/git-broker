@@ -15,8 +15,34 @@ const {
 const gitlabMergeRequest = async (payload) => {
   const projectId = payload.project.id;
   const mergeRequestId = payload.object_attributes.iid;
-  const commentBody = `Kindly specify the names of env you want to specify in the given format [dev,stage,qa]`;
-  await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, commentBody);
+  const repoUrl = payload?.repository?.homepage;
+  let envList;
+  try {
+    envList = await orchestratorEnvListRequest(repoUrl, '/');
+  } catch (error) {
+    log.error('Error in gitlabPushRequest');
+    log.error(error);
+    await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, error.message);
+    return;
+  }
+  const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
+  if (envs.length) {
+    try {
+      const contextDir = '/';
+      const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs[0], '', 'true');
+      await orchestratorDeploymentRequest(orchestratorPayload);
+      await commentOnGitlabMergeRequest(
+        payload,
+        projectId,
+        mergeRequestId,
+        `⌛️ Build & Deployment Process Started Successfully for the ephemeral preview, we'll update you with the access url shortly.`
+      );
+    } catch (error) {
+      log.error('Error in gitlabCommentOnCommit');
+      log.error(error);
+      await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, error.message);
+    }
+  }
 };
 
 const gitlabPushRequest = async (payload) => {
@@ -29,12 +55,20 @@ const gitlabPushRequest = async (payload) => {
   } catch (error) {
     log.error('Error in gitlabPushRequest');
     log.error(error);
-    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    try {
+      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    } catch (error) {
+      log.error(error);
+    }
     return;
   }
   const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
   const commentBody = `📗 Kindly specify the names of environment you want to deploy [Registered Environment : ${envs.toString()}].`;
-  await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
+  try {
+    await commentOnGitlabCommit(payload, projectId, commitId, commentBody);
+  } catch (error) {
+    log.error(error);
+  }
 };
 
 const gitlabCommentOnCommit = async (payload) => {
@@ -49,7 +83,11 @@ const gitlabCommentOnCommit = async (payload) => {
   } catch (error) {
     log.error('Error in gitlabCommentOnCommit');
     log.error(error);
-    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    try {
+      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    } catch (error) {
+      log.error(error);
+    }
     return;
   }
   try {
@@ -57,7 +95,11 @@ const gitlabCommentOnCommit = async (payload) => {
   } catch (error) {
     log.error('Error in gitlabPushRequest');
     log.error(error);
-    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    try {
+      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    } catch (error) {
+      log.error(error);
+    }
     return;
   }
   envList = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
@@ -82,7 +124,6 @@ const gitlabCommentOnCommit = async (payload) => {
     } catch (error) {
       log.error('Error in gitlabCommentOnCommit');
       log.error(error);
-      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
       return;
     }
   }
@@ -90,14 +131,18 @@ const gitlabCommentOnCommit = async (payload) => {
   // @internal TODO : mono repo support to be added
   const contextDir = '/';
   try {
-    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, ref);
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, ref, '');
     const response = await orchestratorDeploymentRequest(orchestratorPayload);
     // @internal comment on specific Merge Request
     await commentOnGitlabCommit(payload, projectId, commitId, response.message);
   } catch (error) {
     log.error('Error in gitlabCommentOnCommit');
     log.error(error);
-    await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    try {
+      await commentOnGitlabCommit(payload, projectId, commitId, error.message);
+    } catch (error) {
+      log.error(error);
+    }
   }
 };
 
@@ -109,7 +154,7 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   const envs = Array.from(deploymentEnvs);
   const contextDir = payload.object_attributes.source.change_path || '/';
   try {
-    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '');
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '', '');
     const response = await orchestratorDeploymentRequest(orchestratorPayload);
     // @internal comment on specific Merge Request
     await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, response.message);

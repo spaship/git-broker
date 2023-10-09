@@ -43,7 +43,7 @@ const githubPullRequestOnCloseAndMerge = async (payload) => {
     contextDir = '/';
   }
   try {
-    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '');
+    const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '', '');
     const response = await orchestratorDeploymentRequest(orchestratorPayload);
     if (response) {
       // @internal comment on specific PR
