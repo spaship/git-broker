@@ -1,4 +1,4 @@
-FROM node:18-alpine3.16 AS build
+FROM node:20.2.0-alpine3.16 AS build
 
 RUN addgroup -S puzzgroup && adduser -S -G puzzgroup puzzuser
 WORKDIR /app

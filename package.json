@@ -43,7 +43,6 @@
     "express-pino-logger": "^5.0.0",
     "github-webhook-handler": "^1.0.0",
     "gitlab": "^14.2.2",
-    "glob": "^10.3.10",
     "lighthouse": "^11.3.0",
     "lodash": "^4.17.15",
     "octokit": "^2.0.14",
