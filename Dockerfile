@@ -7,6 +7,9 @@ COPY package*.json ./
 RUN npm ci --only=production
 COPY . .
 
+# Set the CHROME_PATH environment variable
+ENV CHROME_PATH /path/to/chrome
+
 RUN chown -R puzzuser:puzzgroup /app
 USER puzzuser
 
