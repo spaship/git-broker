@@ -4,6 +4,7 @@ const url = require('url');
 const fs = require('fs');
 const { globSync } = require('glob');
 const path = require('path');
+const { orchestratorLighthouseDetails } = require('../services/common');
 
 const launchChromeAndRunLighthouse = async (url) => {
 	log.info(`launching lighthouse and chrome : ${url} `);
@@ -115,17 +116,23 @@ const getOverallReport = async (result) => {
 
 module.exports.launchChromeAndRunLighthouse = async (req, res) => {
 	const payload = req.body;
-	let comparedReport;
+	launchChromeAndRunLighthouseService(payload);
+	res.send({ message: `report generation started` });
+}
+
+const launchChromeAndRunLighthouseService = async (payload) => {
+	const { propertyIdentifer, applicationIdentifier, env, url, identifier } = payload;
+	// let comparedReport;
 	let overAllReport;
 	let dirName = 'report';
+
 	try {
 		if (!fs.existsSync(dirName)) {
 			fs.mkdirSync(dirName);
 		}
 	} catch (e) {
 		log.error(e);
-		res.status(500);
-		return res.send(e);
+		return;
 	}
 
 	let results;
@@ -134,11 +141,14 @@ module.exports.launchChromeAndRunLighthouse = async (req, res) => {
 		overAllReport = await getOverallReport(results.js);
 	} catch (e) {
 		log.error(e);
-		res.status(500);
-		return res.send(e);
+		const orchestratorPayload = { errorMessage: `Report Generation Failed`, stackTrace: JSON.stringify(e), propertyIdentifer, applicationIdentifier, env, url, identifier };
+		await orchestratorLighthouseDetails(orchestratorPayload);
+		return;
 	}
 
 	try {
+
+		/*
 		const prevReports = globSync(`${dirName}/*.json`);
 
 		if (prevReports.length) {
@@ -155,20 +165,22 @@ module.exports.launchChromeAndRunLighthouse = async (req, res) => {
 
 			comparedReport = await compareReports(recentReportContents, results.js);
 		}
+		*/
+		const orchestratorPayload = { report: overAllReport, propertyIdentifer, applicationIdentifier, env, url, identifier };
+		await orchestratorLighthouseDetails(orchestratorPayload);
 
 	} catch (e) {
 		log.error(e);
 	}
 
+	/*
 	try {
 		fs.writeFile(`${dirName}/${results.js['fetchTime'].replace(/:/g, '_')}.json`, results.json, (err) => {
-			if (err) throw err;
+		if (err) throw err;
 		});
 		res.send({ message: `Lighthouse report generated successfully `, fileName: `${dirName}/${results.js['fetchTime'].replace(/:/g, '_')}.json`, overAllReport, comparedReport })
 	} catch (e) {
 		log.error(e);
-		res.status(500);
-		return res.send(e);
 	}
-
+	*/
 };

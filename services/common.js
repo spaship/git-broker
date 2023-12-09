@@ -35,6 +35,24 @@ const orchestratorEnvListRequest = async (repoUrl, contextDir) => {
   }
 };
 
+const orchestratorLighthouseDetails = async (data) => {
+  log.info(data);
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${config.orchestratorSecret}`
+  };
+  try {
+    const response = await axios.post(`${config.orchestratorBaseUrl}/applications/lighthouse/consumer`, data, { headers });
+    log.info(response?.data);
+    return response?.data?.data;
+  } catch (error) {
+    log.error('Error in sending data to Orchestrator');
+    log.error(error);
+    throw new Error(error?.response?.data.message);
+  }
+};
+
+
 const createOrchestratorPayload = (payload, contextDir, envs, ref, ephemeral) => {
   return {
     repoUrl: payload?.repository?.html_url || payload?.project?.web_url,
@@ -51,5 +69,6 @@ const createOrchestratorPayload = (payload, contextDir, envs, ref, ephemeral) =>
 module.exports = {
   orchestratorDeploymentRequest,
   createOrchestratorPayload,
-  orchestratorEnvListRequest
+  orchestratorEnvListRequest,
+  orchestratorLighthouseDetails
 };
