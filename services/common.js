@@ -48,7 +48,6 @@ const orchestratorLighthouseDetails = async (data) => {
   } catch (error) {
     log.error('Error in sending data to Orchestrator');
     log.error(error);
-    throw new Error(error?.response?.data.message);
   }
 };
 
