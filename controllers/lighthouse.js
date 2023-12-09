@@ -15,7 +15,7 @@ const launchChromeAndRunLighthouse = async (url) => {
 		const chrome = await chromeLauncher.launch({
 			headless: false,
 			protocolTimeout: 30000,
-			chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox']
+			chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox', '--disable-network-throttling', '--disable-cpu-throttling', '--verbose']
 		});
 		log.info(`chrome port - ${chrome.port}`);
 		const opts = {
