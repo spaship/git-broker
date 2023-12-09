@@ -16,7 +16,6 @@ COPY package*.json ./
 RUN npm ci --only=production
 COPY . .
 
-RUN sudo chmod -R 777 /app
 RUN chown -R puzzuser:puzzgroup /app
 USER puzzuser
 
