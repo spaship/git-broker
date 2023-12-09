@@ -14,7 +14,7 @@ const launchChromeAndRunLighthouse = async (url) => {
 		log.info(`launching chrome`);
 		const chrome = await chromeLauncher.launch({
 			headless: 'new',
-			protocolTimeout: 100000,
+			protocolTimeout: 10000000,
 			chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox']
 		});
 		log.info(`chrome port - ${chrome.port}`);
@@ -30,7 +30,7 @@ const launchChromeAndRunLighthouse = async (url) => {
 		};
 	} catch (e) {
 		log.error(e);
-		throw new Error(e);
+		//throw new Error(e);
 	}
 };
 
@@ -119,10 +119,9 @@ const getOverallReport = async (result) => {
 
 module.exports.launchChromeAndRunLighthouse = async (req, res) => {
 	const payload = req.body;
-	try{
-
+	try {
 		launchChromeAndRunLighthouseService(payload);
-	}catch(e){
+	} catch (e) {
 		log.err
 	}
 	res.send({ message: `report generation started` });
