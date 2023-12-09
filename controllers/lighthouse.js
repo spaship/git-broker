@@ -22,6 +22,7 @@ const launchChromeAndRunLighthouse = async (url) => {
 		};
 		log.info(`launching lighthouse`);
 		const results = await lighthouse(url, opts);
+		log.info(results);
 		await chrome.kill();
 		return {
 			js: results.lhr,
