@@ -109,6 +109,7 @@ const getOverallReport = async (result) => {
 		if (metricFilter.includes(auditObj))
 			report[auditObj] = result['audits'][auditObj].numericValue;
 
+	log.info(`lighthouse report`);
 	log.info(JSON.stringify(report))
 	return report;
 }
@@ -138,6 +139,7 @@ const launchChromeAndRunLighthouseService = async (payload) => {
 	let results;
 	try {
 		results = await launchChromeAndRunLighthouse(payload.url);
+		log.info(results.js);
 		overAllReport = await getOverallReport(results.js);
 	} catch (e) {
 		log.error(e);
