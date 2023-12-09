@@ -13,8 +13,8 @@ const launchChromeAndRunLighthouse = async (url) => {
 	try {
 		log.info(`launching chrome`);
 		const chrome = await chromeLauncher.launch({
-			headless: 'new',
-			protocolTimeout: 10000000,
+			headless: false,
+			protocolTimeout: 30000,
 			chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox']
 		});
 		log.info(`chrome port - ${chrome.port}`);
@@ -146,7 +146,6 @@ const launchChromeAndRunLighthouseService = async (payload) => {
 	let results;
 	try {
 		results = await launchChromeAndRunLighthouse(payload.url);
-		log.info(results.js);
 		overAllReport = await getOverallReport(results.js);
 	} catch (e) {
 		log.error(e);
