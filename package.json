@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@gitbeaker/node": "^35.8.1",
+    "@lhci/cli": "^0.12.0",
     "@octokit/rest": "^19.0.7",
     "@octokit/webhooks": "^10.7.0",
     "@spaship/common": "^0.14.0",

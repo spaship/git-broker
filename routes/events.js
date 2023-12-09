@@ -10,4 +10,7 @@ router.post('/comment', events.post);
 
 router.post('/lighthouse', lighthouse.launchChromeAndRunLighthouse);
 
+router.post('/lhcli', lighthouse.lhcli);
+
+
 module.exports = router;

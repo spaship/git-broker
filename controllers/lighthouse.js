@@ -5,7 +5,7 @@ const fs = require('fs');
 const { globSync } = require('glob');
 const path = require('path');
 const { orchestratorLighthouseDetails } = require('../services/common');
-
+const { execSync } = require('child_process');
 const launchChromeAndRunLighthouse = async (url) => {
 	log.info(`launching lighthouse and chrome : ${url} `);
 	const lighthouse = (await import('lighthouse')).default;
@@ -192,3 +192,26 @@ const launchChromeAndRunLighthouseService = async (payload) => {
 	}
 	*/
 };
+
+
+
+
+module.exports.lhcli = async (req, res) => {
+	const url = req.body.url;
+
+	if (!url) {
+		return res.status(400).json({ error: 'URL parameter is required' });
+	}
+	try {
+		// Run Lighthouse command synchronously
+		const result = execSync(`lhci collect --url=${url}`).toString();
+		console.log(result);
+		// You may want to parse the result and extract relevant information
+		// For simplicity, the raw result is sent in the response
+		res.json({ result });
+
+	} catch (error) {
+		console.error(error.message);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+}
