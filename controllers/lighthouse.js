@@ -122,9 +122,10 @@ module.exports.launchChromeAndRunLighthouse = async (req, res) => {
 	try {
 		launchChromeAndRunLighthouseService(payload);
 	} catch (e) {
-		log.err
+		log.error(e);
 	}
 	res.send({ message: `report generation started` });
+	return;
 }
 
 const launchChromeAndRunLighthouseService = async (payload) => {
