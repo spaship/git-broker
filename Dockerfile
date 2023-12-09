@@ -1,15 +1,22 @@
-FROM node:20.2.0-alpine3.16 AS build
+FROM node:20
 
-RUN addgroup -S puzzgroup && adduser -S -G puzzgroup puzzuser
+RUN addgroup puzzgroup && adduser --ingroup puzzgroup puzzuser
 WORKDIR /app
+RUN chmod -R 777 /app
+
+# https://www.google.com/linuxrepositories/
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' >> /etc/apt/sources.list
+
+RUN apt-get update && apt-get install --no-install-recommends -y google-chrome-stable
+
+
 
 COPY package*.json ./
 RUN npm ci --only=production
 COPY . .
 
-# Set the CHROME_PATH environment variable
-ENV CHROME_PATH /path/to/chrome
-
+RUN sudo chmod -R 777 /app
 RUN chown -R puzzuser:puzzgroup /app
 USER puzzuser
 

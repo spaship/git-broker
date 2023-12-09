@@ -8,7 +8,6 @@ const lighthouse = require('../controllers/lighthouse');
  */
 router.post('/comment', events.post);
 
-
-router.get('/lighthouse', lighthouse.launchChromeAndRunLighthouse);
+router.post('/lighthouse', lighthouse.launchChromeAndRunLighthouse);
 
 module.exports = router;
