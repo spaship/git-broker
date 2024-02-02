@@ -19,6 +19,21 @@ const orchestratorDeploymentRequest = async (data) => {
   }
 };
 
+const validateToken = async (token) => {
+  log.info(token);
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  };
+  try {
+    const response = await axios.get(`${config.orchestratorBaseUrl}/apikey/validate`, { headers });
+    log.info(response?.data);
+  } catch (error) {
+    log.error(error);
+    throw new Error(error?.response?.data.message);
+  }
+};
+
 const orchestratorEnvListRequest = async (repoUrl, contextDir) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -51,5 +66,6 @@ const createOrchestratorPayload = (payload, contextDir, envs, ref, ephemeral) =>
 module.exports = {
   orchestratorDeploymentRequest,
   createOrchestratorPayload,
-  orchestratorEnvListRequest
+  orchestratorEnvListRequest,
+  validateToken
 };
