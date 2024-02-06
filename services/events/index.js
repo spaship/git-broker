@@ -7,7 +7,7 @@ const processResponse = async (payload) => {
   try {
     if (applicationStatus) {
       if (applicationStatus === deploymentStatus.APPLICATION_DEPLOYED)
-        commentBody = `${messageHeader} 🥳 Application is deployed Successfully. 🌐 You can access the Application from here : ${accessUrl?.toString()}`;
+        commentBody = `${messageHeader} 🥳✅ Application is deployed Successfully. 🌐 You can access the Application from here : ${accessUrl?.toString()}`;
       else if (applicationStatus === deploymentStatus.APPLICATION_BUILD_FAILED)
         commentBody = `${messageHeader} ❌ Application build is failed, please check the logs from the SPAship manager for the stacktrace.`;
       else if (applicationStatus === deploymentStatus.APPLICATION_BUILD_TIMEOUT)
