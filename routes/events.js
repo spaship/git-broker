@@ -6,6 +6,6 @@ const router = new Router();
 /**
  * @internal webhook for gitlab
  */
-router.post('/comment', events.post);
+router.post('/comment', auth.events, events.post);
 
 module.exports = router;

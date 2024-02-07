@@ -14,8 +14,20 @@ const gitlab = async function  (req, res, next) {
   if (!(await verifyGitlabSignature(req))) {
     res.status(401).send('Unauthorized');
     return;
-  }8
+  }
   next();
+};
+
+const events = async function (req, res, next) {
+  if (!(await verifyEvent(req))) {
+    res.status(401).send('Unauthorized');
+    return;
+  }
+  next();
+};
+
+const verifyEvent = async (req) => {
+  return config.gitBrokerSecret === req.headers['authorization'];
 };
 
 const verifyGithubSignature = async (req) => {
@@ -33,4 +45,4 @@ const verifyGitlabSignature =async (req) => {
   return true;
 };
 
-module.exports = { github, gitlab };
+module.exports = { github, gitlab, events };
