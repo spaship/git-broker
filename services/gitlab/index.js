@@ -169,7 +169,7 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
 
 const gitlabOperations = async (payload) => {
   const filePath = 'spaship.yaml';
-  const commentBody = `## Deployed by SPAship Puzzle`;
+  const commentBody = `## Deployed by SPAship Git Broker`;
   const projectId = payload.project.id;
   const newRef = `${deployment.SPECIFIER}-${uuidv4().substring(0, 5)}`;
   const targetBranch = payload.object_attributes.target_branch;

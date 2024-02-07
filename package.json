@@ -1,8 +1,8 @@
 {
-  "name": "SPAship Puzzle",
+  "name": "SPAship Git Broker",
   "version": "1.0.0",
   "private": true,
-  "description": "SPAship Puzzle",
+  "description": "SPAship Git Broker",
   "license": "ISC",
   "owner": "Soumyadip Chowdhury",
   "homepage": "https://github.com/spaship/puzzle",

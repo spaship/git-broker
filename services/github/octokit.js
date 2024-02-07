@@ -87,7 +87,7 @@ const createFileOnGithubRepository = async (payload, commentBody, filePath, newR
 };
 
 const alterFileOnGithubRepository = async (payload, currentContent, newRef) => {
-  const content = '### Deployment by SPAship Puzzle 1.0.0.';
+  const content = '### Deployment by SPAship Git Broker 1.0.0.';
   await octokit.repos
     .createOrUpdateFileContents({
       owner: payload.repository.owner.login,

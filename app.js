@@ -16,7 +16,7 @@ app
   .use(responseWrapper())
   .get('/liveness', liveness)
   .get('/readiness', readiness)
-  .use('/puzzle', routes)
+  .use('/git-broker', routes)
   .use(errorHandler());
 
 module.exports = app;

@@ -13,9 +13,9 @@ console.info(`
 `);
 
 if (config.env === 'production') {
-  log.info(`Starting SPAship Puzzle ${pkgJSON.version} running on production`);
+  log.info(`Starting SPAship Git Broker ${pkgJSON.version} running on production`);
 } else {
-  log.info(`Starting SPAship Puzzle ${pkgJSON.version} running on ${config.env}`);
+  log.info(`Starting SPAship Git Broker ${pkgJSON.version} running on ${config.env}`);
 }
 
 (async () => {

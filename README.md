@@ -1,4 +1,4 @@
-# SPAship Puzzle
+# SPAship Git Broker
 
 > A GitHub App built for SPAship
 
@@ -8,10 +8,10 @@
 # Install dependencies
 npm install
 
-# Run the Puzzle for development
+# Run the Git Broker for development
 npm run start:dev
 
-# Run the Puzzle for production
+# Run the Git Broker for production
 npm run start
 
 # env

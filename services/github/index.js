@@ -60,7 +60,7 @@ const githubPullRequestOnCloseAndMerge = async (payload) => {
 
 const gitOperations = async (payload) => {
   const filePath = 'spaship.yaml';
-  const commentBody = `## Deployed by SPAship Puzzle`;
+  const commentBody = `## Deployed by SPAship Git Broker`;
   const newRef = `${deployment.SPECIFIER}-${uuidv4().substring(0, 5)}`;
   // @internal comment on a specific commit
   await commentOnGithubMergedCommit(payload, commentBody);
