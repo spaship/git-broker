@@ -3,17 +3,12 @@ name: SPAship puzzle build and push into container repository
 on:
   push:
     branches:
-      - 'master'
-      - 'main'
-      - 'test'
-      - 'qa'
-      - 'dev'
-      - 'fix/**'
-      - 'feat/**'
+      - '*'
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
-      version:
-        default: v1.0.0
+      env:
         description: Select environment
         options:
           - Dev
@@ -22,6 +17,10 @@ on:
           - Prod
         required: true
         type: choice
+      version:
+        default: v1.0.0
+        description: Bump Version
+        required: true
 
 jobs:
   push_to_registry:
