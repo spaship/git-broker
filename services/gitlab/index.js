@@ -26,6 +26,8 @@ const gitlabMergeRequest = async (payload) => {
     return;
   }
   const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
+  /*
+  @internal Temporarily disabling Auto Ephemeral Environment Creation
   if (envs.length) {
     try {
       const contextDir = '/';
@@ -43,6 +45,7 @@ const gitlabMergeRequest = async (payload) => {
       await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, error.message);
     }
   }
+  */
 };
 
 const gitlabPushRequest = async (payload) => {
