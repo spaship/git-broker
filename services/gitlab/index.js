@@ -26,6 +26,15 @@ const gitlabMergeRequest = async (payload) => {
     return;
   }
   const envs = envList.filter((env) => env.cluster == 'preprod').map((property) => property.env);
+  const commentBody = `📗 Kindly specify the names of environment you want to deploy [Registered Environment : ${envs.toString()}].`;
+  log.info(commentBody);
+  try {
+    await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, commentBody);
+  } catch (error) {
+    log.error(error);
+  }
+  /*
+  @internal Temporarily disabling Auto Ephemeral Environment Creation
   if (envs.length) {
     try {
       const contextDir = '/';
@@ -43,6 +52,7 @@ const gitlabMergeRequest = async (payload) => {
       await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, error.message);
     }
   }
+  */
 };
 
 const gitlabPushRequest = async (payload) => {
@@ -73,10 +83,22 @@ const gitlabPushRequest = async (payload) => {
 
 const gitlabCommentOnCommit = async (payload) => {
   if (!payload?.object_attributes?.description?.startsWith(deployment.SPECIFIER)) return;
-  const commitId = payload.commit.id;
+  const commitId = payload?.commit?.id;
+  if (!commitId) {
+    log.info("No commit ID found in payload. Skipping gitlabCommentOnCommit.");
+    return;
+  }
   const projectId = payload.project.id;
   const repoUrl = payload?.repository?.homepage;
   const commentBody = payload.object_attributes.description;
+  log.info(
+    `Gitlab Comment rquest: {
+      id: ${commitId},
+      projectId: ${projectId},
+      repoUrl: ${repoUrl},
+      commentBody: ${commentBody}
+    }`
+  );
   let envList;
   try {
     await commentOnGitlabCommit(payload, projectId, commitId, "⌛️ We're Currently Processing the Deployment Request, Please wait for sometime.");
@@ -153,6 +175,11 @@ const gitlabMergeRequestOnCloseAndMerge = async (payload) => {
   if (!deploymentEnvs?.size) return;
   const envs = Array.from(deploymentEnvs);
   const contextDir = payload.object_attributes.source.change_path || '/';
+  try {
+    await commentOnGitlabMergeRequest(payload, projectId, mergeRequestId, "⌛️ We're Currently Processing the Deployment Request, Please wait for sometime.");
+  } catch (error) {
+    log.error(error);
+  }
   try {
     const orchestratorPayload = createOrchestratorPayload(payload, contextDir, envs, '', '');
     const response = await orchestratorDeploymentRequest(orchestratorPayload);
